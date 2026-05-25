@@ -1,3 +1,0 @@
-User-agent: *
-Allow: /
-Sitemap: https://famatias.github.io/scada/sitemap.xml
