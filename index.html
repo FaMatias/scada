@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SCADA HMI · Planta Potabilizadora — Fabricio M. Toso</title>
+<meta name="description" content="Dashboard SCADA interactivo de planta potabilizadora: caudal, turbidez, pH, cloro, CT desinfección, THM, filtros y dosificación química en tiempo real. Por Fabricio M. Toso, Operador de Planta y Dev Industrial." />
+<meta name="author" content="Fabricio Matías Toso" />
+<meta name="keywords" content="SCADA, HMI, planta potabilizadora, ETAP, CT desinfección, THM, turbidez, cloro residual, dashboard industrial, Fabricio Toso, Zaragoza" />
+<meta name="theme-color" content="#0c2340" />
+<meta name="robots" content="index, follow" />
+<link rel="canonical" href="https://famatias.github.io/scada/" />
+
+<meta property="og:title" content="SCADA HMI · Planta Potabilizadora — Fabricio M. Toso" />
+<meta property="og:description" content="Simulador SCADA v4.0 con alarmas filtrables, CT desinfección, THM, filtros backwash y KPI de planta. Demo industrial." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://famatias.github.io/scada/" />
+<meta property="og:image" content="https://famatias.github.io/scada/preview.jpg" />
+<meta property="og:locale" content="es_ES" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="SCADA HMI · Planta Potabilizadora" />
+<meta name="twitter:description" content="Dashboard SCADA interactivo con datos simulados de planta potabilizadora." />
+<meta name="twitter:image" content="https://famatias.github.io/scada/preview.jpg" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "SCADA HMI · Planta Potabilizadora",
+  "applicationCategory": "IndustrialApplication",
+  "operatingSystem": "Web",
+  "softwareVersion": "4.0",
+  "description": "Simulador SCADA web de planta potabilizadora con monitoreo en tiempo real, sistema de alarmas con filtros, CT desinfección y KPI operativos.",
+  "author": {
+    "@type": "Person",
+    "name": "Fabricio Matías Toso",
+    "jobTitle": "Operador de Planta y Dev Industrial",
+    "address": { "@type": "PostalAddress", "addressLocality": "Zaragoza", "addressCountry": "ES" },
+    "sameAs": [
+      "https://famatias.github.io/dev/",
+      "https://www.linkedin.com/in/fabricio-matias-toso/",
+      "https://github.com/famatias"
+    ]
+  },
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" }
+}
+</script>
+</head>
+<body>
+
+<!-- ===== TOPBAR ===== -->
+<header class="topbar" role="banner">
+  <div class="brand">
+    <div class="logo-mark" aria-hidden="true">
+      <svg viewBox="0 0 32 32" width="22" height="22"><path d="M4 24 L12 8 L20 20 L28 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="brand-text">
+      <strong>Water Treatment</strong>
+      <span>SCADA · HMI v4.0</span>
+    </div>
+  </div>
+
+  <nav class="topbar-meta" aria-label="Estado del sistema">
+    <div class="meta-pill"><span class="dot dot-ok"></span><span>Planta · EN LÍNEA</span></div>
+    <div class="meta-pill"><span>KPI · <strong id="kpiVal">--%</strong></span></div>
+    <div class="meta-pill"><span>Modo · <strong>AUTO</strong></span></div>
+    <div class="meta-pill"><span>Op. <strong>F. TOSO</strong></span></div>
+    <div class="meta-pill clock"><span id="clock">--:--:--</span></div>
+  </nav>
+</header>
+
+<!-- ===== MAIN GRID ===== -->
+<main class="grid" role="main">
+
+  <!-- Row 1 -->
+  <section class="card card--chart" aria-labelledby="t-press">
+    <header class="card-head">
+      <div><h2 id="t-press">Presión Línea</h2><p class="sub">PT-101 · Bar</p></div>
+      <span class="tag">2 min</span>
+    </header>
+    <canvas class="chart" data-chart="pressure"></canvas>
+    <footer class="card-foot"><span class="kv">Actual <strong data-val="pressure">--</strong> bar</span><span class="kv">Max <strong data-val="pressure-max">--</strong></span></footer>
+  </section>
+
+  <section class="card card--gauge" aria-labelledby="t-tankin">
+    <header class="card-head"><div><h2 id="t-tankin">Tank Inflow</h2><p class="sub">FIT-204 · m³/h</p></div></header>
+    <div class="gauge-stage"><canvas class="gauge" data-gauge="inflow" data-max="1200"></canvas><div class="gauge-readout"><span class="gv" data-val="inflow">--</span><span class="gu">m³/h</span></div></div>
+  </section>
+
+  <section class="card card--chart" aria-labelledby="t-pH">
+    <header class="card-head">
+      <div><h2 id="t-pH">pH &amp; Turbidez</h2><p class="sub">AIT-301 / AIT-302</p></div>
+      <span class="tag">live</span>
+    </header>
+    <canvas class="chart" data-chart="ph"></canvas>
+    <footer class="card-foot"><span class="kv">pH <strong data-val="ph">--</strong></span><span class="kv">Turb <strong data-val="turb">--</strong> NTU</span></footer>
+  </section>
+
+  <!-- Row 2 -->
+  <section class="card card--gauge" aria-labelledby="t-cl">
+    <header class="card-head"><div><h2 id="t-cl">Cloro Residual</h2><p class="sub">AIT-401 · mg/L</p></div></header>
+    <div class="gauge-stage"><canvas class="gauge" data-gauge="cl" data-max="3"></canvas><div class="gauge-readout"><span class="gv" data-val="cl">--</span><span class="gu">mg/L</span></div></div>
+  </section>
+
+  <section class="card card--chart" aria-labelledby="t-flow">
+    <header class="card-head">
+      <div><h2 id="t-flow">Caudal Tratado</h2><p class="sub">FIT-105 · m³/h</p></div>
+      <span class="tag">2 min</span>
+    </header>
+    <canvas class="chart" data-chart="flow"></canvas>
+    <footer class="card-foot"><span class="kv">Q <strong data-val="flow">--</strong> m³/h</span><span class="kv">Acum <strong data-val="flow-acc">--</strong> m³</span></footer>
+  </section>
+
+  <section class="card card--bars" aria-labelledby="t-cons">
+    <header class="card-head"><div><h2 id="t-cons">Consumo Energético</h2><p class="sub">kWh · 12h</p></div></header>
+    <canvas class="chart" data-chart="energy"></canvas>
+  </section>
+
+  <!-- Row 3: gauges row -->
+  <section class="card card--mini" aria-labelledby="t-tk1">
+    <header class="card-head"><div><h2 id="t-tk1">Depósito A</h2><p class="sub">LIT-501</p></div></header>
+    <div class="mini-row"><canvas class="gauge gauge-sm" data-gauge="tkA" data-max="100"></canvas><div class="gauge-readout sm"><span class="gv" data-val="tkA">--</span><span class="gu">%</span></div></div>
+  </section>
+
+  <section class="card card--mini" aria-labelledby="t-tk2">
+    <header class="card-head"><div><h2 id="t-tk2">Depósito B</h2><p class="sub">LIT-502</p></div></header>
+    <div class="mini-row"><canvas class="gauge gauge-sm" data-gauge="tkB" data-max="100"></canvas><div class="gauge-readout sm"><span class="gv" data-val="tkB">--</span><span class="gu">%</span></div></div>
+  </section>
+
+  <section class="card card--mini" aria-labelledby="t-pac">
+    <header class="card-head"><div><h2 id="t-pac">Silo PAC</h2><p class="sub">WIT-601</p></div></header>
+    <div class="mini-row"><canvas class="gauge gauge-sm" data-gauge="pac" data-max="100"></canvas><div class="gauge-readout sm"><span class="gv" data-val="pac">--</span><span class="gu">%</span></div></div>
+  </section>
+
+  <section class="card card--mini" aria-labelledby="t-bars">
+    <header class="card-head"><div><h2 id="t-bars">Bombas RPM</h2><p class="sub">P-01 → P-05</p></div></header>
+    <canvas class="chart chart-bars" data-chart="pumps"></canvas>
+  </section>
+
+  <!-- Row 4: NEW industry KPIs -->
+  <section class="card card--kpi" aria-labelledby="t-ct">
+    <header class="card-head"><div><h2 id="t-ct">CT · Desinfección</h2><p class="sub">Cl × t · mg·min/L</p></div><span class="tag tag-info">USEPA</span></header>
+    <div class="kpi-stage">
+      <div class="kpi-num"><span data-val="ct">--</span><small>mg·min/L</small></div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" id="ctBar"></div></div>
+      <p class="kpi-note">Objetivo ≥ <strong>6.0</strong> · log inactivación Giardia 3-log</p>
+    </div>
+  </section>
+
+  <section class="card card--kpi" aria-labelledby="t-thm">
+    <header class="card-head"><div><h2 id="t-thm">THM Totales</h2><p class="sub">Subproductos · μg/L</p></div><span class="tag tag-info">RD 3/2023</span></header>
+    <div class="kpi-stage">
+      <div class="kpi-num"><span data-val="thm">--</span><small>μg/L</small></div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" id="thmBar"></div></div>
+      <p class="kpi-note">Límite legal <strong>100 μg/L</strong> · objetivo &lt; 60</p>
+    </div>
+  </section>
+
+  <section class="card card--filters" aria-labelledby="t-flt">
+    <header class="card-head"><div><h2 id="t-flt">Filtros Arena</h2><p class="sub">FLT-01/02/03 · ΔP</p></div></header>
+    <div class="filter-grid" id="filterGrid"></div>
+  </section>
+
+  <section class="card card--kpi" aria-labelledby="t-uv">
+    <header class="card-head"><div><h2 id="t-uv">UV-254 / SDI</h2><p class="sub">Calidad agua cruda</p></div><span class="tag tag-info">QA</span></header>
+    <div class="kpi-stage">
+      <div class="kpi-num"><span data-val="uv">--</span><small>cm⁻¹</small></div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" id="uvBar"></div></div>
+      <p class="kpi-note">SDI <strong data-val="sdi">--</strong> · materia orgánica</p>
+    </div>
+  </section>
+</main>
+
+<!-- ===== LATERAL: pumps + alarms ===== -->
+<section class="lower" aria-label="Equipos y eventos">
+  <div class="card card--pumps">
+    <header class="card-head"><div><h2>Bombas / Equipos</h2><p class="sub">MEC·04</p></div></header>
+    <div class="pump-grid" id="pumpGrid"></div>
+  </div>
+
+  <div class="card card--dose">
+    <header class="card-head"><div><h2>Dosificación química</h2><p class="sub">CHEM</p></div></header>
+    <ul class="dose-list">
+      <li><span class="sw sw-pac"></span><div><p class="dn">PAC (coagulante)</p><p class="dv"><strong data-val="pac-d">--</strong> <span>mg/L</span></p></div></li>
+      <li><span class="sw sw-cl"></span><div><p class="dn">Cloro gas (Cl₂)</p><p class="dv"><strong data-val="cl-d">--</strong> <span>mg/L</span></p></div></li>
+      <li><span class="sw sw-floc"></span><div><p class="dn">Floculante</p><p class="dv"><strong data-val="floc-d">--</strong> <span>mg/L</span></p></div></li>
+      <li><span class="sw sw-hcl"></span><div><p class="dn">HCl (corrección)</p><p class="dv"><strong data-val="hcl-d">--</strong> <span>mL/min</span></p></div></li>
+    </ul>
+  </div>
+
+  <div class="card card--alarms">
+    <header class="card-head">
+      <div><h2>Registro de eventos</h2><p class="sub" id="evCount">0 / 0 eventos</p></div>
+      <div class="alarm-tools">
+        <button class="btn-sm" id="ackAll" type="button" title="Reconocer todas">✓ ACK</button>
+        <button class="btn-sm" id="expCsv" type="button" title="Exportar CSV">⬇ CSV</button>
+        <button class="btn-sm btn-danger" id="clrAll" type="button" title="Limpiar log">✕</button>
+      </div>
+    </header>
+
+    <!-- Alarm summary chips -->
+    <div class="alarm-summary" role="group" aria-label="Resumen por severidad">
+      <button class="chip chip-all active" data-filter="all" type="button">
+        Todas <span class="chip-n" id="cntAll">0</span>
+      </button>
+      <button class="chip chip-crit" data-filter="crit" type="button">
+        ● Crítica <span class="chip-n" id="cntCrit">0</span>
+      </button>
+      <button class="chip chip-warn" data-filter="warn" type="button">
+        ▲ Aviso <span class="chip-n" id="cntWarn">0</span>
+      </button>
+      <button class="chip chip-info" data-filter="info" type="button">
+        ◆ Info <span class="chip-n" id="cntInfo">0</span>
+      </button>
+      <button class="chip chip-ok" data-filter="ok" type="button">
+        ✓ OK <span class="chip-n" id="cntOk">0</span>
+      </button>
+    </div>
+
+    <div class="alarm-search">
+      <input type="search" id="alarmSearch" placeholder="Buscar tag, mensaje, hora…" aria-label="Buscar eventos" />
+    </div>
+
+    <ol class="alarm-log" id="alarmLog" aria-live="polite"></ol>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footbar" role="contentinfo">
+  <div>SCADA·SIM v4.0 · HTML/JS · Datos simulados</div>
+  <div class="ticker"><div class="ticker-inner" id="ticker"></div></div>
+  <div>© <span id="yr"></span> · <a href="https://famatias.github.io/dev/" rel="noopener">Fabricio M. Toso</a> · Zaragoza</div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
