@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SCADA HMI v5.0 · ETAP + Tratamiento de Lodos — Fabricio M. Toso</title>
+<meta name="description" content="SCADA v5.0: monitoreo en tiempo real de planta potabilizadora completa — agua cruda, coagulación, floculación, decantación, filtración, desinfección, regulación de pH y tratamiento de lodos. L/s y L/h." />
+<meta name="author" content="Fabricio Matías Toso" />
+<meta name="keywords" content="SCADA, HMI, ETAP, planta potabilizadora, tratamiento de lodos, espesador, centrífuga, coagulación, floculación, decantación, filtración arena, CT desinfección, THM, Fabricio Toso" />
+<meta name="theme-color" content="#0c2340" />
+<meta name="robots" content="index, follow" />
+<link rel="canonical" href="https://famatias.github.io/scada/" />
+
+<meta property="og:title" content="SCADA HMI v5.0 · ETAP + Lodos — Fabricio M. Toso" />
+<meta property="og:description" content="Simulador SCADA v5.0 con línea completa de tratamiento de agua potable y tratamiento de lodos en tiempo real (L/s y L/h)." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://famatias.github.io/scada/" />
+<meta property="og:image" content="https://famatias.github.io/scada/preview.jpg" />
+<meta property="og:locale" content="es_ES" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="SCADA HMI v5.0 · ETAP + Lodos" />
+<meta name="twitter:description" content="Dashboard SCADA completo de ETAP con tratamiento de lodos en tiempo real." />
+<meta name="twitter:image" content="https://famatias.github.io/scada/preview.jpg" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "SCADA HMI v5.0 · ETAP + Tratamiento de Lodos",
+  "applicationCategory": "IndustrialApplication",
+  "operatingSystem": "Web",
+  "softwareVersion": "5.0",
+  "description": "SCADA web de planta potabilizadora completa con línea de tratamiento de lodos: espesador, acondicionamiento y deshidratación.",
+  "author": {
+    "@type": "Person",
+    "name": "Fabricio Matías Toso",
+    "jobTitle": "Operador de Planta y Dev Industrial",
+    "address": { "@type": "PostalAddress", "addressLocality": "Zaragoza", "addressCountry": "ES" }
+  },
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" }
+}
+</script>
+</head>
+<body>
+
+<!-- ===== TOPBAR ===== -->
+<header class="topbar" role="banner">
+  <div class="brand">
+    <div class="logo-mark" aria-hidden="true">
+      <svg viewBox="0 0 32 32" width="22" height="22"><path d="M4 24 L12 8 L20 20 L28 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="brand-text">
+      <strong>Water Treatment</strong>
+      <span>SCADA · HMI v5.0</span>
+    </div>
+  </div>
+
+  <nav class="topbar-meta" aria-label="Estado del sistema">
+    <div class="meta-pill"><span class="dot dot-ok"></span><span>Planta · EN LÍNEA</span></div>
+    <div class="meta-pill"><span>KPI · <strong id="kpiVal">--%</strong></span></div>
+    <div class="meta-pill"><span>Modo · <strong>AUTO</strong></span></div>
+    <div class="meta-pill"><span>Op. <strong>F. TOSO</strong></span></div>
+    <div class="meta-pill clock"><span id="clock">--:--:--</span></div>
+  </nav>
+</header>
+
+<!-- ===== PROCESS RAIL ===== -->
+<nav class="rail" aria-label="Línea de proceso">
+  <a href="#sec-raw"      class="rail-node"><span class="rn-i">1</span><span class="rn-l">Agua Cruda</span></a>
+  <a href="#sec-coag"     class="rail-node"><span class="rn-i">2</span><span class="rn-l">Coagulación</span></a>
+  <a href="#sec-floc"     class="rail-node"><span class="rn-i">3</span><span class="rn-l">Floculación</span></a>
+  <a href="#sec-dec"      class="rail-node"><span class="rn-i">4</span><span class="rn-l">Decantación</span></a>
+  <a href="#sec-filt"     class="rail-node"><span class="rn-i">5</span><span class="rn-l">Filtración</span></a>
+  <a href="#sec-des"      class="rail-node"><span class="rn-i">6</span><span class="rn-l">Desinfección</span></a>
+  <a href="#sec-ph"       class="rail-node"><span class="rn-i">7</span><span class="rn-l">pH</span></a>
+  <a href="#sec-out"      class="rail-node"><span class="rn-i">8</span><span class="rn-l">Salida Red</span></a>
+  <a href="#sec-sludge"   class="rail-node rail-alt"><span class="rn-i">9</span><span class="rn-l">Lodos</span></a>
+</nav>
+
+<!-- ===== MAIN ===== -->
+<main role="main" class="stage">
+
+  <!-- ============ 1 · AGUA CRUDA ============ -->
+  <section id="sec-raw" class="proc">
+    <h1 class="proc-title"><span class="proc-num">01</span> Agua Cruda <em>· Captación río/lago</em><i class="info" data-info="raw"></i></h1>
+    <div class="grid">
+      <article class="card card--chart" style="grid-column:span 5">
+        <header class="card-head"><div><h2>Turbidez agua cruda <i class="info" data-info="turb"></i></h2><p class="sub">AIT-101 · NTU</p></div><span class="tag">2 min</span></header>
+        <canvas class="chart" data-chart="turbRaw"></canvas>
+        <footer class="card-foot"><span class="kv">Actual <strong data-val="turbRaw">--</strong> NTU</span><span class="kv">Máx <strong data-val="turbRawMax">--</strong></span></footer>
+      </article>
+
+      <article class="card card--chart" style="grid-column:span 4">
+        <header class="card-head"><div><h2>pH agua cruda <i class="info" data-info="ph"></i></h2><p class="sub">AIT-102</p></div><span class="tag">live</span></header>
+        <canvas class="chart" data-chart="phRaw"></canvas>
+        <footer class="card-foot"><span class="kv">pH <strong data-val="phRaw">--</strong></span><span class="kv">Temp <strong data-val="tempRaw">--</strong> °C</span></footer>
+      </article>
+
+      <article class="card card--gauge" style="grid-column:span 3">
+        <header class="card-head"><div><h2>Caudal entrada <i class="info" data-info="qin"></i></h2><p class="sub">FIT-100</p></div></header>
+        <div class="gauge-stage">
+          <canvas class="gauge" data-gauge="qin" data-max="350"></canvas>
+          <div class="gauge-readout"><span class="gv" data-val="qinLps">--</span><span class="gu">L/s</span></div>
+        </div>
+        <footer class="card-foot"><span class="kv"><strong data-val="qinLph">--</strong> L/h</span><span class="kv"><strong data-val="qinM3h">--</strong> m³/h</span></footer>
+      </article>
+
+      <article class="card card--mini" style="grid-column:span 3">
+        <header class="card-head"><div><h2>Conductividad <i class="info" data-info="cond"></i></h2><p class="sub">AIT-103 · µS/cm</p></div></header>
+        <div class="mini-num"><span data-val="cond">--</span><small>µS/cm</small></div>
+      </article>
+      <article class="card card--mini" style="grid-column:span 3">
+        <header class="card-head"><div><h2>UV-254 <i class="info" data-info="uv"></i></h2><p class="sub">AIT-104 · cm⁻¹</p></div></header>
+        <div class="mini-num"><span data-val="uv">--</span><small>cm⁻¹</small></div>
+      </article>
+      <article class="card card--mini" style="grid-column:span 3">
+        <header class="card-head"><div><h2>Nivel afluente <i class="info" data-info="afluente"></i></h2><p class="sub">LIT-100 · %</p></div></header>
+        <div class="mini-row"><canvas class="gauge gauge-sm" data-gauge="afluente" data-max="100"></canvas><div class="gauge-readout sm"><span class="gv" data-val="afluente">--</span><span class="gu">%</span></div></div>
+      </article>
+      <article class="card card--mini" style="grid-column:span 3">
+        <header class="card-head"><div><h2>SDI <i class="info" data-info="sdi"></i></h2><p class="sub">Índice ensuciamiento</p></div></header>
+        <div class="mini-num"><span data-val="sdi">--</span><small>SDI</small></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ 2 · COAGULACIÓN ============ -->
+  <section id="sec-coag" class="proc">
+    <h1 class="proc-title"><span class="proc-num">02</span> Coagulación <em>· Mezcla rápida + dosificación</em><i class="info" data-info="coag"></i></h1>
+    <div class="grid">
+      <article class="card" style="grid-column:span 4">
+        <header class="card-head"><div><h2>Coagulante <i class="info" data-info="coagulante"></i></h2><p class="sub">Selección reactivo</p></div></header>
+        <label class="field"><span>Producto</span>
+          <select id="coagSel">
+            <option value="PAC">PAC (policloruro de aluminio)</option>
+            <option value="ALSO4">Sulfato de aluminio Al₂(SO₄)₃</option>
+            <option value="FECL3">Cloruro férrico FeCl₃</option>
+          </select>
+        </label>
+        <div class="kv-grid">
+          <div><p class="dn">Dosis</p><p class="dv"><strong data-val="coagDose">--</strong> <span>mg/L</span></p></div>
+          <div><p class="dn">Concentración solución</p><p class="dv"><strong data-val="coagConc">--</strong> <span>%</span></p></div>
+          <div><p class="dn">Caudal dosificador</p><p class="dv"><strong data-val="coagLph">--</strong> <span>L/h</span> · <strong data-val="coagLps">--</strong> <span>L/s</span></p></div>
+          <div><p class="dn">Consumo</p><p class="dv"><strong data-val="coagKgDay">--</strong> <span>kg/día</span></p></div>
+        </div>
+      </article>
+
+      <article class="card card--mini" style="grid-column:span 3">
+        <header class="card-head"><div><h2>Silo coagulante <i class="info" data-info="silo"></i></h2><p class="sub">WIT-201 · %</p></div></header>
+        <div class="mini-row"><canvas class="gauge gauge-sm" data-gauge="coagSilo" data-max="100"></canvas><div class="gauge-readout sm"><span class="gv" data-val="coagSilo">--</span><span class="gu">%</span></div></div>
+      </article>
+
+      <article class="card card--mini" style="grid-column:span 3">
+        <header class="card-head"><div><h2>Mezcla rápida <i class="info" data-info="mixer"></i></h2><p class="sub">M-201 · rpm</p></div></header>
+        <div class="mini-num"><span data-val="mixerRpm">--</span><small>rpm</small></div>
+        <p class="kpi-note">G ≈ <strong data-val="gMix">--</strong> s⁻¹ · t ≈ 30 s</p>
+      </article>
+
+      <article class="card card--kpi" style="grid-column:span 2">
+        <header class="card-head"><div><h2>Eficiencia coag. <i class="info" data-info="effCoag"></i></h2><p class="sub">% remoción turbidez</p></div></header>
+        <div class="kpi-stage">
+          <div class="kpi-num"><span data-val="coagEff">--</span><small>%</small></div>
+          <div class="kpi-bar"><div class="kpi-bar-fill" id="coagBar"></div></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ 3 · FLOCULACIÓN ============ -->
+  <section id="sec-floc" class="proc">
+    <h1 class="proc-title"><span class="proc-num">03</span> Floculación <em>· Formación de flóculos</em><i class="info" data-info="floc"></i></h1>
+    <div class="grid">
+      <article class="card" style="grid-column:span 4">
+        <header class="card-head"><div><h2>Polielectrolito <i class="info" data-info="polielec"></i></h2><p class="sub">Floculante aniónico</p></div></header>
+        <div class="kv-grid">
+          <div><p class="dn">Dosis</p><p class="dv"><strong data-val="flocDose">--</strong> <span>mg/L</span></p></div>
+          <div><p class="dn">Caudal</p><p class="dv"><strong data-val="flocLph">--</strong> <span>L/h</span> · <strong data-val="flocLps">--</strong> <span>L/s</span></p></div>
+          <div><p class="dn">Concentración</p><p class="dv"><strong data-val="flocConc">--</strong> <span>%</span></p></div>
+          <div><p class="dn">Consumo</p><p class="dv"><strong data-val="flocKgDay">--</strong> <span>kg/día</span></p></div>
+        </div>
+      </article>
+
+      <article class="card card--mini" style="grid-column:span 3">
+        <header class="card-head"><div><h2>Paletas floculador <i class="info" data-info="paddle"></i></h2><p class="sub">M-301 · rpm</p></div></header>
+        <div class="mini-num"><span data-val="paddleRpm">--</span><small>rpm</small></div>
+        <p class="kpi-note">Gradiente <strong data-val="gFloc">--</strong> s⁻¹</p>
+      </article>
+
+      <article class="card card--mini" style="grid-column:span 3">
+        <header class="card-head"><div><h2>T. retención <i class="info" data-info="tret"></i></h2><p class="sub">Cámara floc.</p></div></header>
+        <div class="mini-num"><span data-val="tretFloc">--</span><small>min</small></div>
+      </article>
+
+      <article class="card card--kpi" style="grid-column:span 2">
+        <header class="card-head"><div><h2>Calidad flóculo <i class="info" data-info="qfloc"></i></h2><p class="sub">Índice visual</p></div></header>
+        <div class="kpi-stage">
+          <div class="kpi-num"><span data-val="flocQ">--</span><small>/10</small></div>
+          <div class="kpi-bar"><div class="kpi-bar-fill" id="flocBar"></div></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ 4 · DECANTACIÓN ============ -->
+  <section id="sec-dec" class="proc">
+    <h1 class="proc-title"><span class="proc-num">04</span> Decantación <em>· Decantador circular con puente barredor</em><i class="info" data-info="decant"></i></h1>
+    <div class="grid">
+      <article class="card card--chart" style="grid-column:span 5">
+        <header class="card-head"><div><h2>Turbidez salida decantador <i class="info" data-info="turbDec"></i></h2><p class="sub">AIT-401 · NTU</p></div><span class="tag">2 min</span></header>
+        <canvas class="chart" data-chart="turbDec"></canvas>
+        <footer class="card-foot"><span class="kv">Actual <strong data-val="turbDec">--</strong> NTU</span><span class="kv">Remoción <strong data-val="decEff">--</strong>%</span></footer>
+      </article>
+
+      <article class="card card--mini" style="grid-column:span 3">
+        <header class="card-head"><div><h2>Carga superficial <i class="info" data-info="carga"></i></h2><p class="sub">m³/m²·h</p></div></header>
+        <div class="mini-num"><span data-val="carga">--</span><small>m³/m²·h</small></div>
+        <p class="kpi-note">Recomendado &lt; 2.5</p>
+      </article>
+
+      <article class="card card--mini" style="grid-column:span 2">
+        <header class="card-head"><div><h2>Puente barredor <i class="info" data-info="puente"></i></h2><p class="sub">M-401</p></div></header>
+        <div class="mini-num"><span data-val="puenteRpm">--</span><small>rpm</small></div>
+      </article>
+
+      <article class="card card--mini" style="grid-column:span 2">
+        <header class="card-head"><div><h2>Purga lodos <i class="info" data-info="purga"></i></h2><p class="sub">→ espesador</p></div></header>
+        <div class="mini-num"><span data-val="purgaLps">--</span><small>L/s</small></div>
+        <p class="kpi-note"><strong data-val="purgaLph">--</strong> L/h</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ 5 · FILTRACIÓN ============ -->
+  <section id="sec-filt" class="proc">
+    <h1 class="proc-title"><span class="proc-num">05</span> Filtración <em>· Filtros rápidos de arena</em><i class="info" data-info="filt"></i></h1>
+    <div class="grid">
+      <article class="card card--filters" style="grid-column:span 5">
+        <header class="card-head"><div><h2>Filtros FLT-01/02/03 <i class="info" data-info="filtros"></i></h2><p class="sub">ΔP · bar</p></div></header>
+        <div class="filter-grid" id="filterGrid"></div>
+      </article>
+
+      <article class="card card--chart" style="grid-column:span 4">
+        <header class="card-head"><div><h2>Turbidez filtrada <i class="info" data-info="turbFilt"></i></h2><p class="sub">AIT-501 · NTU</p></div><span class="tag">live</span></header>
+        <canvas class="chart" data-chart="turbFilt"></canvas>
+        <footer class="card-foot"><span class="kv">Actual <strong data-val="turbFilt">--</strong> NTU</span><span class="kv">Límite <strong>1.0</strong> NTU</span></footer>
+      </article>
+
+      <article class="card card--mini" style="grid-column:span 3">
+        <header class="card-head"><div><h2>Agua lavado <i class="info" data-info="bw"></i></h2><p class="sub">Backwash acum.</p></div></header>
+        <div class="mini-num"><span data-val="bwVol">--</span><small>m³ / día</small></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ 6 · DESINFECCIÓN ============ -->
+  <section id="sec-des" class="proc">
+    <h1 class="proc-title"><span class="proc-num">06</span> Desinfección <em>· Cloración con hipoclorito</em><i class="info" data-info="des"></i></h1>
+    <div class="grid">
+      <article class="card card--gauge" style="grid-column:span 3">
+        <header class="card-head"><div><h2>Cloro residual <i class="info" data-info="cl"></i></h2><p class="sub">AIT-601 · mg/L</p></div></header>
+        <div class="gauge-stage"><canvas class="gauge" data-gauge="cl" data-max="3"></canvas><div class="gauge-readout"><span class="gv" data-val="cl">--</span><span class="gu">mg/L</span></div></div>
+      </article>
+
+      <article class="card card--kpi" style="grid-column:span 3">
+        <header class="card-head"><div><h2>CT desinfección <i class="info" data-info="ct"></i></h2><p class="sub">Cl × t · mg·min/L</p></div><span class="tag tag-info">USEPA</span></header>
+        <div class="kpi-stage">
+          <div class="kpi-num"><span data-val="ct">--</span><small>mg·min/L</small></div>
+          <div class="kpi-bar"><div class="kpi-bar-fill" id="ctBar"></div></div>
+          <p class="kpi-note">Objetivo ≥ <strong>6.0</strong> · Giardia 3-log</p>
+        </div>
+      </article>
+
+      <article class="card card--kpi" style="grid-column:span 3">
+        <header class="card-head"><div><h2>THM totales <i class="info" data-info="thm"></i></h2><p class="sub">µg/L</p></div><span class="tag tag-info">RD 3/2023</span></header>
+        <div class="kpi-stage">
+          <div class="kpi-num"><span data-val="thm">--</span><small>µg/L</small></div>
+          <div class="kpi-bar"><div class="kpi-bar-fill" id="thmBar"></div></div>
+          <p class="kpi-note">Límite <strong>100</strong> · objetivo &lt; 60</p>
+        </div>
+      </article>
+
+      <article class="card" style="grid-column:span 3">
+        <header class="card-head"><div><h2>Hipoclorito <i class="info" data-info="naclo"></i></h2><p class="sub">Dosificación</p></div></header>
+        <div class="kv-grid">
+          <div><p class="dn">Dosis</p><p class="dv"><strong data-val="clDose">--</strong> <span>mg/L</span></p></div>
+          <div><p class="dn">Caudal</p><p class="dv"><strong data-val="clLph">--</strong> <span>L/h</span></p></div>
+          <div><p class="dn">L/s</p><p class="dv"><strong data-val="clLps">--</strong> <span>L/s</span></p></div>
+          <div><p class="dn">Tanque NaClO</p><p class="dv"><strong data-val="clTank">--</strong> <span>%</span></p></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ 7 · REGULACIÓN pH ============ -->
+  <section id="sec-ph" class="proc">
+    <h1 class="proc-title"><span class="proc-num">07</span> Regulación de pH <em>· Ajuste según pH de salida</em><i class="info" data-info="phReg"></i></h1>
+    <div class="grid">
+      <article class="card" style="grid-column:span 4">
+        <header class="card-head"><div><h2>Reactivo <i class="info" data-info="reactivo"></i></h2><p class="sub">Selección automática</p></div></header>
+        <label class="field"><span>Producto</span>
+          <select id="phSel">
+            <option value="CO2">CO₂ (bajar pH suave)</option>
+            <option value="H2SO4">H₂SO₄ ácido sulfúrico</option>
+            <option value="NAOH">NaOH sosa cáustica</option>
+            <option value="CAOH">Ca(OH)₂ cal apagada</option>
+          </select>
+        </label>
+        <p class="kpi-note">Setpoint <strong>7.50</strong> pH · banda ±0.2</p>
+      </article>
+
+      <article class="card card--chart" style="grid-column:span 4">
+        <header class="card-head"><div><h2>pH tratado <i class="info" data-info="phOut"></i></h2><p class="sub">AIT-701</p></div><span class="tag">2 min</span></header>
+        <canvas class="chart" data-chart="phOut"></canvas>
+        <footer class="card-foot"><span class="kv">pH <strong data-val="phOut">--</strong></span><span class="kv">SP <strong>7.50</strong></span></footer>
+      </article>
+
+      <article class="card" style="grid-column:span 4">
+        <header class="card-head"><div><h2>Dosificación <i class="info" data-info="phDose"></i></h2><p class="sub" id="phReactivoSub">--</p></div></header>
+        <div class="kv-grid">
+          <div><p class="dn">Caudal</p><p class="dv"><strong data-val="phLph">--</strong> <span>L/h</span></p></div>
+          <div><p class="dn">L/s</p><p class="dv"><strong data-val="phLps">--</strong> <span>L/s</span></p></div>
+          <div><p class="dn">Tanque</p><p class="dv"><strong data-val="phTank">--</strong> <span>%</span></p></div>
+          <div><p class="dn">Consumo</p><p class="dv"><strong data-val="phKgDay">--</strong> <span>kg/día</span></p></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ 8 · SALIDA A RED ============ -->
+  <section id="sec-out" class="proc">
+    <h1 class="proc-title"><span class="proc-num">08</span> Agua tratada · Salida a red<i class="info" data-info="out"></i></h1>
+    <div class="grid">
+      <article class="card card--chart" style="grid-column:span 5">
+        <header class="card-head"><div><h2>Caudal salida <i class="info" data-info="qout"></i></h2><p class="sub">FIT-801</p></div><span class="tag">2 min</span></header>
+        <canvas class="chart" data-chart="qout"></canvas>
+        <footer class="card-foot"><span class="kv"><strong data-val="qoutLps">--</strong> L/s · <strong data-val="qoutM3h">--</strong> m³/h</span><span class="kv">Acum <strong data-val="qoutAcc">--</strong> m³</span></footer>
+      </article>
+
+      <article class="card card--gauge" style="grid-column:span 3">
+        <header class="card-head"><div><h2>Presión red <i class="info" data-info="pres"></i></h2><p class="sub">PT-801 · bar</p></div></header>
+        <div class="gauge-stage"><canvas class="gauge" data-gauge="pres" data-max="5"></canvas><div class="gauge-readout"><span class="gv" data-val="pres">--</span><span class="gu">bar</span></div></div>
+      </article>
+
+      <article class="card card--mini" style="grid-column:span 2">
+        <header class="card-head"><div><h2>Depósito A <i class="info" data-info="dep"></i></h2><p class="sub">LIT-501</p></div></header>
+        <div class="mini-row"><canvas class="gauge gauge-sm" data-gauge="tkA" data-max="100"></canvas><div class="gauge-readout sm"><span class="gv" data-val="tkA">--</span><span class="gu">%</span></div></div>
+      </article>
+      <article class="card card--mini" style="grid-column:span 2">
+        <header class="card-head"><div><h2>Depósito B <i class="info" data-info="dep"></i></h2><p class="sub">LIT-502</p></div></header>
+        <div class="mini-row"><canvas class="gauge gauge-sm" data-gauge="tkB" data-max="100"></canvas><div class="gauge-readout sm"><span class="gv" data-val="tkB">--</span><span class="gu">%</span></div></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ 9 · TRATAMIENTO DE LODOS ============ -->
+  <section id="sec-sludge" class="proc proc-alt">
+    <h1 class="proc-title"><span class="proc-num">09</span> Tratamiento de Lodos <em>· Espesador + acondicionamiento + deshidratación</em><i class="info" data-info="sludge"></i></h1>
+    <div class="grid">
+      <!-- Espesador -->
+      <article class="card" style="grid-column:span 4">
+        <header class="card-head"><div><h2>Espesador por gravedad <i class="info" data-info="espesador"></i></h2><p class="sub">TK-901</p></div></header>
+        <div class="kv-grid">
+          <div><p class="dn">Sólidos entrada</p><p class="dv"><strong data-val="thIn">--</strong> <span>%</span></p></div>
+          <div><p class="dn">Sólidos salida</p><p class="dv"><strong data-val="thOut">--</strong> <span>%</span></p></div>
+          <div><p class="dn">Caudal lodo</p><p class="dv"><strong data-val="thLps">--</strong> <span>L/s</span> · <strong data-val="thLph">--</strong> <span>L/h</span></p></div>
+          <div><p class="dn">Nivel manto</p><p class="dv"><strong data-val="manto">--</strong> <span>%</span></p></div>
+        </div>
+      </article>
+
+      <article class="card card--chart" style="grid-column:span 4">
+        <header class="card-head"><div><h2>Sequedad torta <i class="info" data-info="sequedad"></i></h2><p class="sub">Salida deshidratación</p></div><span class="tag">live</span></header>
+        <canvas class="chart" data-chart="cake"></canvas>
+        <footer class="card-foot"><span class="kv">Actual <strong data-val="cake">--</strong>%</span><span class="kv">Objetivo &gt; 22%</span></footer>
+      </article>
+
+      <article class="card card--gauge" style="grid-column:span 4">
+        <header class="card-head"><div><h2>Captura sólidos <i class="info" data-info="captura"></i></h2><p class="sub">% recuperación</p></div></header>
+        <div class="gauge-stage"><canvas class="gauge" data-gauge="captura" data-max="100"></canvas><div class="gauge-readout"><span class="gv" data-val="captura">--</span><span class="gu">%</span></div></div>
+      </article>
+
+      <!-- Acondicionamiento -->
+      <article class="card" style="grid-column:span 4">
+        <header class="card-head"><div><h2>Acondicionamiento <i class="info" data-info="polimero"></i></h2><p class="sub">Polímero catiónico</p></div></header>
+        <div class="kv-grid">
+          <div><p class="dn">Dosis</p><p class="dv"><strong data-val="polDose">--</strong> <span>g/kg MS</span></p></div>
+          <div><p class="dn">Caudal prep.</p><p class="dv"><strong data-val="polLph">--</strong> <span>L/h</span> · <strong data-val="polLps">--</strong> <span>L/s</span></p></div>
+          <div><p class="dn">Concentración</p><p class="dv"><strong data-val="polConc">--</strong> <span>%</span></p></div>
+          <div><p class="dn">Consumo</p><p class="dv"><strong data-val="polKgDay">--</strong> <span>kg/día</span></p></div>
+        </div>
+      </article>
+
+      <!-- Deshidratación -->
+      <article class="card" style="grid-column:span 4">
+        <header class="card-head"><div><h2>Deshidratación <i class="info" data-info="deshid"></i></h2><p class="sub">Equipo</p></div></header>
+        <label class="field"><span>Tipo</span>
+          <select id="deshSel">
+            <option value="CENT">Centrífuga decanter</option>
+            <option value="BAND">Filtro banda</option>
+          </select>
+        </label>
+        <div class="kv-grid">
+          <div><p class="dn">Caudal alim.</p><p class="dv"><strong data-val="deshLps">--</strong> <span>L/s</span> · <strong data-val="deshLph">--</strong> <span>L/h</span></p></div>
+          <div><p class="dn">Producción</p><p class="dv"><strong data-val="kgMSh">--</strong> <span>kg MS/h</span></p></div>
+        </div>
+      </article>
+
+      <!-- Almacenamiento -->
+      <article class="card" style="grid-column:span 4">
+        <header class="card-head"><div><h2>Almacenamiento torta <i class="info" data-info="torta"></i></h2><p class="sub">Contenedor</p></div></header>
+        <div class="kv-grid">
+          <div><p class="dn">Acumulado</p><p class="dv"><strong data-val="tnAcum">--</strong> <span>tn</span></p></div>
+          <div><p class="dn">Humedad torta</p><p class="dv"><strong data-val="humTorta">--</strong> <span>%</span></p></div>
+          <div><p class="dn">Autonomía</p><p class="dv"><strong data-val="autonomy">--</strong> <span>días</span></p></div>
+          <div><p class="dn">Retorno escurridos</p><p class="dv"><strong data-val="retLps">--</strong> <span>L/s</span></p></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ LATERAL: equipos + dosificación + alarmas ============ -->
+  <section class="lower" aria-label="Equipos y eventos">
+    <div class="card card--pumps">
+      <header class="card-head"><div><h2>Bombas / Equipos <i class="info" data-info="bombas"></i></h2><p class="sub">MEC·04</p></div></header>
+      <div class="pump-grid" id="pumpGrid"></div>
+    </div>
+
+    <div class="card card--dose">
+      <header class="card-head"><div><h2>Dosificación química <i class="info" data-info="dosif"></i></h2><p class="sub">CHEM resumen</p></div></header>
+      <ul class="dose-list">
+        <li><span class="sw sw-pac"></span><div><p class="dn">Coagulante</p><p class="dv"><strong data-val="coagDose">--</strong> <span>mg/L · </span><strong data-val="coagLph">--</strong> <span>L/h</span></p></div></li>
+        <li><span class="sw sw-floc"></span><div><p class="dn">Floculante</p><p class="dv"><strong data-val="flocDose">--</strong> <span>mg/L · </span><strong data-val="flocLph">--</strong> <span>L/h</span></p></div></li>
+        <li><span class="sw sw-cl"></span><div><p class="dn">Hipoclorito</p><p class="dv"><strong data-val="clDose">--</strong> <span>mg/L · </span><strong data-val="clLph">--</strong> <span>L/h</span></p></div></li>
+        <li><span class="sw sw-hcl"></span><div><p class="dn">Reactivo pH</p><p class="dv"><strong data-val="phLph">--</strong> <span>L/h</span></p></div></li>
+        <li><span class="sw sw-pol"></span><div><p class="dn">Polímero lodos</p><p class="dv"><strong data-val="polLph">--</strong> <span>L/h</span></p></div></li>
+      </ul>
+    </div>
+
+    <div class="card card--alarms">
+      <header class="card-head">
+        <div><h2>Registro de eventos <i class="info" data-info="alarmas"></i></h2><p class="sub" id="evCount">0 / 0 eventos</p></div>
+        <div class="alarm-tools">
+          <button class="btn-sm" id="ackAll" type="button" title="Reconocer todas">✓ Reconocer</button>
+          <button class="btn-sm" id="expCsv" type="button" title="Exportar CSV">⬇ CSV</button>
+          <button class="btn-sm btn-danger" id="clrAll" type="button" title="Limpiar registro">✕ Limpiar</button>
+        </div>
+      </header>
+
+      <div class="alarm-summary" role="group" aria-label="Resumen por severidad">
+        <button class="chip chip-all active" data-filter="all" type="button">Todas <span class="chip-n" id="cntAll">0</span></button>
+        <button class="chip chip-crit" data-filter="crit" type="button">● Crítica <span class="chip-n" id="cntCrit">0</span></button>
+        <button class="chip chip-warn" data-filter="warn" type="button">▲ Aviso <span class="chip-n" id="cntWarn">0</span></button>
+        <button class="chip chip-info" data-filter="info" type="button">◆ Info <span class="chip-n" id="cntInfo">0</span></button>
+        <button class="chip chip-ok" data-filter="ok" type="button">✓ OK <span class="chip-n" id="cntOk">0</span></button>
+      </div>
+
+      <div class="alarm-search">
+        <input type="search" id="alarmSearch" placeholder="Buscar tag, mensaje, hora…" aria-label="Buscar eventos" />
+      </div>
+
+      <ol class="alarm-log" id="alarmLog" aria-live="polite"></ol>
+    </div>
+  </section>
+
+</main>
+
+<!-- Tooltip flotante -->
+<div id="tip" role="tooltip" aria-hidden="true"></div>
+
+<footer class="footbar" role="contentinfo">
+  <div>SCADA·SIM v5.0 · HTML/JS · Datos simulados</div>
+  <div class="ticker"><div class="ticker-inner" id="ticker"></div></div>
+  <div>© <span id="yr"></span> · <a href="https://famatias.github.io/dev/" rel="noopener">Fabricio M. Toso</a> · Zaragoza</div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
